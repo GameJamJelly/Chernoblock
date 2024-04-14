@@ -1,5 +1,17 @@
+html,
 body {
   padding: 0;
   margin: 0;
   background-color: #1b1b1b;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
