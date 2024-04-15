@@ -560,7 +560,7 @@ class Game {
     this.won = false;
 
     this.startText = new GameText({
-      text: "The Blockening",
+      text: "Chernoblock",
       textSize: 48,
       pos: [400, 200],
     });
@@ -670,9 +670,9 @@ class Game {
       background(winImage);
     } else if (state === "lose") {
       background(loseImage);
-    } else if (state === 'menu') {
+    } else if (state === "menu") {
       background(menuBgImage);
-    } else if (state === 'ingame') {
+    } else if (state === "ingame") {
       background(ingameBgImage);
     } else {
       background(...backgroundColor);
@@ -683,9 +683,9 @@ class Game {
     if (this.inMainMenu()) {
       document.body.classList.add("main-menu");
 
-      this.setHTMLBackgroundImage('menu');
-      this.setComradeImage('menu');
-      this.setCanvasBackgroundImage('menu');
+      this.setHTMLBackgroundImage("menu");
+      this.setComradeImage("menu");
+      this.setCanvasBackgroundImage("menu");
 
       this.startText.draw();
       this.startButton.draw();
