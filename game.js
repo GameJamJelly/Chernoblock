@@ -18,6 +18,10 @@ let enemyImage;
 let wallImage;
 let game;
 
+function normalizeAngle(angle) {
+  return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
+}
+
 function wallRect(x1, y1, x2, y2) {
   const angle = Math.atan2(y2 - y1, x2 - x1) + Math.PI / 2;
   const p1 = new Point(
@@ -84,6 +88,12 @@ class Line {
       Math.pow(this.p2.x - this.p1.x, 2) + Math.pow(this.p2.y - this.p1.y, 2)
     );
   }
+
+  angle() {
+    return normalizeAngle(
+      Math.atan2(this.p2.y - this.p1.y, this.p2.x - this.p1.x)
+    );
+  }
 }
 
 class Rectangle {
@@ -94,7 +104,7 @@ class Rectangle {
     this.l4 = l4;
   }
 
-  pointInside(point) {
+  collisionWith(point) {
     const d1 =
       (this.l1.p2.x - this.l1.p1.x) * (point.y - this.l1.p1.y) -
       (this.l1.p2.y - this.l1.p1.y) * (point.x - this.l1.p1.x);
@@ -108,7 +118,64 @@ class Rectangle {
       (this.l4.p2.x - this.l4.p1.x) * (point.y - this.l4.p1.y) -
       (this.l4.p2.y - this.l4.p1.y) * (point.x - this.l4.p1.x);
 
-    return d1 <= 0 && d2 <= 0 && d3 <= 0 && d4 <= 0;
+    if (d1 <= 0 && d2 <= 0 && d3 <= 0 && d4 <= 0) {
+      const corner1 = new Line(point, this.l1.p1);
+      const corner2 = new Line(point, this.l2.p1);
+      const corner3 = new Line(point, this.l3.p1);
+      const corner4 = new Line(point, this.l4.p1);
+      const dist1 = corner1.length();
+      const dist2 = corner2.length();
+      const dist3 = corner3.length();
+      const dist4 = corner4.length();
+
+      if (dist1 <= dist2 && dist1 <= dist3 && dist1 <= dist4) {
+        const line1 = new Line(this.l4.p1, this.l1.p1);
+        const line2 = new Line(this.l2.p1, this.l1.p1);
+        const angle1 = Math.abs(corner1.angle() - line1.angle());
+        const angle2 = Math.abs(corner1.angle() - line2.angle());
+
+        if (angle1 <= angle2) {
+          return this.l4;
+        } else {
+          return this.l1;
+        }
+      } else if (dist2 <= dist1 && dist2 <= dist3 && dist2 <= dist4) {
+        const line1 = new Line(this.l1.p1, this.l2.p1);
+        const line2 = new Line(this.l3.p1, this.l2.p1);
+        const angle1 = Math.abs(corner2.angle() - line1.angle());
+        const angle2 = Math.abs(corner2.angle() - line2.angle());
+
+        if (angle1 <= angle2) {
+          return this.l1;
+        } else {
+          return this.l2;
+        }
+      } else if (dist3 <= dist1 && dist3 <= dist2 && dist3 <= dist4) {
+        const line1 = new Line(this.l2.p1, this.l3.p1);
+        const line2 = new Line(this.l4.p1, this.l3.p1);
+        const angle1 = Math.abs(corner3.angle() - line1.angle());
+        const angle2 = Math.abs(corner3.angle() - line2.angle());
+
+        if (angle1 <= angle2) {
+          return this.l2;
+        } else {
+          return this.l3;
+        }
+      } else if (dist4 <= dist1 && dist4 <= dist2 && dist4 <= dist3) {
+        const line1 = new Line(this.l3.p1, this.l4.p1);
+        const line2 = new Line(this.l1.p1, this.l4.p1);
+        const angle1 = Math.abs(corner4.angle() - line1.angle());
+        const angle2 = Math.abs(corner4.angle() - line2.angle());
+
+        if (angle1 <= angle2) {
+          return this.l3;
+        } else {
+          return this.l4;
+        }
+      }
+    } else {
+      return null;
+    }
   }
 
   draw() {
@@ -237,7 +304,9 @@ class Ball {
   }
 
   startMoving(x, y) {
-    this.direction = Math.atan2(y - this.position.y, x - this.position.x);
+    this.direction = normalizeAngle(
+      Math.atan2(y - this.position.y, x - this.position.x)
+    );
   }
 
   update() {
@@ -256,13 +325,13 @@ class Ball {
     if (this.position.x < 0 || this.position.x >= width) {
       const directionX = Math.cos(this.direction);
       const directionY = Math.sin(this.direction);
-      this.direction = Math.atan2(directionY, -directionX);
+      this.direction = normalizeAngle(Math.atan2(directionY, -directionX));
     }
 
     if (this.position.y < 0) {
       const directionX = Math.cos(this.direction);
       const directionY = Math.sin(this.direction);
-      this.direction = Math.atan2(-directionY, directionX);
+      this.direction = normalizeAngle(Math.atan2(-directionY, directionX));
     }
   }
 
@@ -402,6 +471,18 @@ function draw() {
   background(...backgroundColor);
 
   game.draw();
+
+  if (game.drawingWall.rect !== undefined) {
+    const collision = game.drawingWall.rect.collisionWith(game.ball.position);
+
+    if (collision !== null) {
+      push();
+      stroke(255, 0, 0);
+      strokeWeight(4);
+      line(collision.p1.x, collision.p1.y, collision.p2.x, collision.p2.y);
+      pop();
+    }
+  }
 }
 
 function mousePressed() {
