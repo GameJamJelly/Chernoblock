@@ -540,7 +540,7 @@ class HealthMeter {
     } else {
       fill(255, 0, 0);
     }
-    text(`${this.health.toString()} \u{440}\u{443}\u{431}`, width - 8, 24);
+    text(`${this.health} \u{440}\u{443}\u{431}`, width - 8, 24);
 
     pop();
   }
@@ -562,10 +562,16 @@ class Game {
       textSize: 20,
       rect: [325, 350, 150, 50],
     });
+    this.scoreText = new GameText({
+      text: "",
+      textSize: 32,
+      textColor: [242, 203, 50],
+      pos: [400, 185],
+    });
     this.winPlayAgainButton = new GameButton({
       text: "Play again",
       textSize: 20,
-      rect: [325, 242, 150, 50],
+      rect: [325, 215, 150, 50],
     });
     this.losePlayAgainButton = new GameButton({
       text: "Play again",
@@ -601,6 +607,7 @@ class Game {
     this.played = true;
     this.playing = false;
     this.won = true;
+    this.scoreText.text = `Money saved: ${this.healthMeter.health} \u{440}\u{443}\u{431}`;
   }
 
   lose() {
@@ -704,6 +711,7 @@ class Game {
       this.setComradeImage("win");
       this.setCanvasBackgroundImage("win");
 
+      this.scoreText.draw();
       this.winPlayAgainButton.draw();
 
       if (this.winPlayAgainButton.clicking()) {
