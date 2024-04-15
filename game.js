@@ -1,15 +1,18 @@
 const wallImageWidth = 64;
 const wallImageHeight = 16;
 const wallDepth = 16;
+const potentialWallOpacity = 0.6;
 const ballSpeed = 4;
 const ballRadius = 8;
 const startingHealth = 100;
+const healthPerEnemyDestroyed = 50;
 const enemyRows = 5;
 const enemyColumns = 10;
 const backgroundColor = [191, 191, 191];
 const edgeColor = [0, 0, 0];
 const defaultTextSize = 16;
 const defaultTextColor = [0, 0, 0];
+const defaultTextOutlineColor = [255, 255, 255];
 const defaultButtonBackgroundColor = [0, 191, 0];
 const defaultButtonTextColor = [255, 255, 255];
 let playerImage;
@@ -20,6 +23,20 @@ let game;
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
+}
+
+function limitLine(p1, p2, maxLength) {
+  const potentialLine = new Line(p1, p2);
+
+  if (Math.ceil(potentialLine.length()) <= maxLength) {
+    return p2;
+  }
+
+  const angle = potentialLine.angle();
+  const maxX = p1.x + maxLength * Math.cos(angle);
+  const maxY = p1.y + maxLength * Math.sin(angle);
+
+  return new Point(maxX, maxY);
 }
 
 function wallRect(x1, y1, x2, y2) {
@@ -49,7 +66,47 @@ function wallRect(x1, y1, x2, y2) {
   );
 }
 
-function drawWall(rect, opacity) {
+function drawPotentialWall(x1, y1, x2, y2) {
+  const rect = wallRect(x1, y1, x2, y2);
+  const line = new Line(new Point(x1, y1), new Point(x2, y2));
+
+  const x = (rect.l1.p1.x + rect.l3.p1.x) / 2;
+  const y = (rect.l1.p1.y + rect.l3.p1.y) / 2;
+  const rectWidth = rect.l2.length();
+  const rectHeight = rect.l1.length();
+  const rotation = normalizeAngle(
+    Math.atan2(rect.l4.p1.y - rect.l4.p2.y, rect.l4.p1.x - rect.l4.p2.x)
+  );
+  let textRotation = rotation;
+  const wallCost = Math.ceil(line.length());
+
+  if (textRotation >= Math.PI / 2 && textRotation < (3 * Math.PI) / 2) {
+    textRotation = normalizeAngle(textRotation + Math.PI);
+  }
+
+  push();
+
+  imageMode(CENTER);
+  translate(x, y);
+  rotate(rotation);
+  tint(255, potentialWallOpacity * 255);
+  image(wallImage, 0, 0, rectWidth, rectHeight);
+
+  pop();
+  push();
+
+  translate(x, y);
+  rotate(textRotation);
+  stroke(0);
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(wallDepth * 0.75);
+  text(wallCost.toString(), 0, 0);
+
+  pop();
+}
+
+function drawWall(rect) {
   const x = (rect.l1.p1.x + rect.l3.p1.x) / 2;
   const y = (rect.l1.p1.y + rect.l3.p1.y) / 2;
   const rectWidth = rect.l2.length();
@@ -64,7 +121,6 @@ function drawWall(rect, opacity) {
   imageMode(CENTER);
   translate(x, y);
   rotate(rotation);
-  tint(255, opacity * 255);
   image(wallImage, 0, 0, rectWidth, rectHeight);
 
   pop();
@@ -213,11 +269,21 @@ class DrawingWall {
   }
 
   drawEnd(x, y) {
-    this.drawing = false;
-    this.line = new Line(new Point(this.startX, this.startY), new Point(x, y));
-    this.rect = wallRect(this.startX, this.startY, x, y);
-    this.startX = undefined;
-    this.startY = undefined;
+    if (game.healthMeter.health > 0) {
+      const p1 = new Point(this.startX, this.startY);
+      const p2 = new Point(x, y);
+      const limitedP2 = limitLine(p1, p2, game.healthMeter.health);
+
+      this.drawing = false;
+      this.line = new Line(p1, limitedP2);
+      this.rect = wallRect(p1.x, p1.y, limitedP2.x, limitedP2.y);
+      this.startX = undefined;
+      this.startY = undefined;
+
+      game.healthMeter.use(Math.ceil(this.line.length()));
+    } else {
+      this.clearDrawing();
+    }
   }
 
   clearDrawing() {
@@ -230,9 +296,15 @@ class DrawingWall {
 
   draw() {
     if (this.drawing && !(this.startX === mouseX && this.startY === mouseY)) {
-      drawWall(wallRect(this.startX, this.startY, mouseX, mouseY), 0.6);
+      if (game.healthMeter.health > 0) {
+        const p1 = new Point(this.startX, this.startY);
+        const p2 = new Point(mouseX, mouseY);
+        const limitedP2 = limitLine(p1, p2, game.healthMeter.health);
+
+        drawPotentialWall(p1.x, p1.y, limitedP2.x, limitedP2.y);
+      }
     } else if (this.rect !== undefined) {
-      drawWall(this.rect, 1.0);
+      drawWall(this.rect);
     }
   }
 }
@@ -309,6 +381,12 @@ class Ball {
     );
   }
 
+  bounce(line) {
+    const perpendicularAngle = line.angle() + Math.PI;
+    const angleDiff = perpendicularAngle - this.direction;
+    this.direction = normalizeAngle(this.direction + 2 * angleDiff);
+  }
+
   update() {
     if (this.direction !== undefined) {
       this.position = new Point(
@@ -333,6 +411,33 @@ class Ball {
       const directionY = Math.sin(this.direction);
       this.direction = normalizeAngle(Math.atan2(-directionY, directionX));
     }
+
+    if (game.drawingWall.rect !== undefined) {
+      const collisionLine = game.drawingWall.rect.collisionWith(this.position);
+
+      if (collisionLine !== null) {
+        this.bounce(collisionLine);
+        // TODO: wall destruction animation
+        game.drawingWall.clearDrawing();
+      }
+    }
+
+    const enemyCollisions = [];
+
+    for (let i = 0; i < game.enemies.length; i++) {
+      const collisionLine = game.enemies[i].rect.collisionWith(this.position);
+
+      if (collisionLine !== null) {
+        this.bounce(collisionLine);
+        enemyCollisions.push(i);
+      }
+    }
+
+    for (const enemyIndex of enemyCollisions) {
+      // TODO: enemy destruction animation
+      game.enemies.splice(enemyIndex, 1);
+      game.healthMeter.gain(healthPerEnemyDestroyed);
+    }
   }
 
   draw() {
@@ -344,6 +449,85 @@ class Ball {
     stroke(0);
     fill(255);
     circle(this.position.x, this.position.y, ballRadius * 2);
+
+    pop();
+  }
+}
+
+class Enemy {
+  constructor(index) {
+    const enemyWidth = width / enemyColumns;
+    const enemyHeight = enemyWidth * 0.6;
+    const enemyTopOffset = 2 * enemyHeight;
+
+    const row = Math.floor(index / enemyColumns);
+    const column = index % enemyColumns;
+
+    const p1 = new Point(
+      enemyWidth * column,
+      enemyHeight * row + enemyTopOffset
+    );
+    const p2 = new Point(
+      enemyWidth * column,
+      enemyHeight * (row + 1) + enemyTopOffset
+    );
+    const p3 = new Point(
+      enemyWidth * (column + 1),
+      enemyHeight * (row + 1) + enemyTopOffset
+    );
+    const p4 = new Point(
+      enemyWidth * (column + 1),
+      enemyHeight * row + enemyTopOffset
+    );
+
+    this.index = index;
+    this.rect = new Rectangle(
+      new Line(p1, p2),
+      new Line(p2, p3),
+      new Line(p3, p4),
+      new Line(p4, p1)
+    );
+  }
+
+  draw() {
+    // TODO: display enemy image
+    this.rect.draw();
+  }
+}
+
+class HealthMeter {
+  constructor() {
+    this.health = startingHealth;
+  }
+
+  gain(amount) {
+    this.health += amount;
+  }
+
+  use(amount) {
+    this.health = Math.max(this.health - amount, 0);
+  }
+
+  draw() {
+    push();
+
+    imageMode(CORNER);
+    translate(width - 8, 8);
+    rotate(Math.PI / 2);
+    image(wallImage, 0, 0, 32, 16);
+
+    pop();
+    push();
+
+    textAlign(RIGHT, CENTER);
+    textSize(24);
+    strokeWeight(0);
+    if (this.health > 0) {
+      fill(...defaultTextColor);
+    } else {
+      fill(255, 0, 0);
+    }
+    text(this.health.toString(), width - 32, 24);
 
     pop();
   }
@@ -387,8 +571,12 @@ class Game {
   reset() {
     this.drawingWall = new DrawingWall();
     this.ball = new Ball(new Point(width / 2, height - 100));
-    // this.enemies = ;
-    this.health = startingHealth;
+    this.healthMeter = new HealthMeter();
+    this.enemies = [];
+
+    for (let i = 0; i < enemyRows * enemyColumns; i++) {
+      this.enemies.push(new Enemy(i));
+    }
   }
 
   play() {
@@ -435,6 +623,16 @@ class Game {
     } else if (this.inGame()) {
       this.drawingWall.draw();
       this.ball.draw();
+
+      for (const enemy of this.enemies) {
+        enemy.draw();
+      }
+
+      this.healthMeter.draw();
+
+      if (this.enemies.length === 0) {
+        this.win();
+      }
     } else if (this.inWinScreen()) {
       this.winText.draw();
       this.playAgainButton.draw();
@@ -471,18 +669,6 @@ function draw() {
   background(...backgroundColor);
 
   game.draw();
-
-  if (game.drawingWall.rect !== undefined) {
-    const collision = game.drawingWall.rect.collisionWith(game.ball.position);
-
-    if (collision !== null) {
-      push();
-      stroke(255, 0, 0);
-      strokeWeight(4);
-      line(collision.p1.x, collision.p1.y, collision.p2.x, collision.p2.y);
-      pop();
-    }
-  }
 }
 
 function mousePressed() {
