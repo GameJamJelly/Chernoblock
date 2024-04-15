@@ -562,26 +562,22 @@ class Game {
       textSize: 20,
       rect: [325, 350, 150, 50],
     });
-    this.winText = new GameText({
-      text: "You Win!",
-      textSize: 48,
-      pos: [400, 200],
-    });
-    this.loseText = new GameText({
-      text: "Game Over!",
-      textSize: 48,
-      pos: [400, 200],
-    });
-    this.playAgainButton = new GameButton({
+    this.winPlayAgainButton = new GameButton({
       text: "Play again",
       textSize: 20,
-      rect: [325, 350, 150, 50],
+      rect: [325, 242, 150, 50],
     });
-    this.winButton = new GameButton({
-      text: "win instead :)",
-      textSize: 10,
-      rect: [350, 450, 100, 15],
+    this.losePlayAgainButton = new GameButton({
+      text: "Play again",
+      textSize: 20,
+      rect: [225, 527, 150, 50],
     });
+    this.lieButton = new GameButton({
+      text: "Lie",
+      textSize: 20,
+      rect: [425, 527, 150, 50],
+    });
+
     this.reset();
   }
 
@@ -708,23 +704,21 @@ class Game {
       this.setComradeImage("win");
       this.setCanvasBackgroundImage("win");
 
-      this.winText.draw();
-      this.playAgainButton.draw();
+      this.winPlayAgainButton.draw();
 
-      if (this.playAgainButton.clicking()) {
+      if (this.winPlayAgainButton.clicking()) {
         this.play();
       }
     } else if (this.inLoseScreen()) {
       this.setComradeImage("lose");
       this.setCanvasBackgroundImage("lose");
 
-      this.loseText.draw();
-      this.playAgainButton.draw();
-      this.winButton.draw();
+      this.losePlayAgainButton.draw();
+      this.lieButton.draw();
 
-      if (this.playAgainButton.clicking()) {
+      if (this.losePlayAgainButton.clicking()) {
         this.play();
-      } else if (this.winButton.clicking()) {
+      } else if (this.lieButton.clicking()) {
         this.win();
       }
     }
