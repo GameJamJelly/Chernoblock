@@ -18,7 +18,10 @@ let wallImage;
 let game;
 let htmlBGImage;
 let comradeImage;
-let canvasBGImage
+let menuBgImage;
+let ingameBgImage;
+let winImage;
+let loseImage;
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -437,7 +440,6 @@ class Game {
       comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
     } else if (state === 'lose') {
       comradeImage = "assets/dyatlov_rip.gif";
-
       comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
     } else if (state === 'ingame'){
       comradeCam.style.display = 'block'; // Unhide the comrade
@@ -466,6 +468,10 @@ class Game {
       background(winImage);
     } else if (state === 'lose') {
       background(loseImage);
+    } else if (state === 'menu') {
+      background(menuBgImage);
+    } else if (state === 'ingame') {
+      background(ingameBgImage);
     } else {
       background(...backgroundColor);
     }
@@ -478,6 +484,7 @@ class Game {
 
       this.setHTMLBackgroundImage('menu');
       this.setComradeImage('menu');
+      this.setCanvasBackgroundImage('menu');
 
       this.startText.draw();
       this.startButton.draw();
@@ -535,6 +542,8 @@ function setup() {
   wallImage = loadImage("assets/wall.png");
   winImage = loadImage("assets/win.png");
   loseImage = loadImage("assets/loser.png");
+  menuBgImage = loadImage("assets/main_menu_bg.png");
+  ingameBgImage = loadImage("assets/ingame_bg.gif");
   game = new Game();
 }
 
