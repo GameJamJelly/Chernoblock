@@ -8,12 +8,12 @@ const startingHealth = 100;
 const healthPerEnemyDestroyed = 50;
 const enemyRows = 5;
 const enemyColumns = 10;
-const backgroundColor = [191, 191, 191];
+const backgroundColor = [178, 200, 138];
 const edgeColor = [0, 0, 0];
 const defaultTextSize = 16;
 const defaultTextColor = [0, 0, 0];
 const defaultTextOutlineColor = [255, 255, 255];
-const defaultButtonBackgroundColor = [0, 191, 0];
+const defaultButtonBackgroundColor = [75, 93, 93];
 const defaultButtonTextColor = [255, 255, 255];
 let ballImage;
 let enemyImage;
@@ -327,6 +327,7 @@ class GameText {
 
     textAlign(CENTER, CENTER);
     textSize(this.textSize);
+    strokeWeight(0);
     fill(...this.textColor);
     text(this.text, ...this.pos);
 
