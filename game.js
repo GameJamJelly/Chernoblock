@@ -434,12 +434,10 @@ class Game {
     let comradeCam = document.querySelector('#comrade-cam');
     if (state === 'win') {
       comradeImage = "assets/dyatlov_win.gif";
-      console.log("WIN " + comradeImage.toString());
       comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
     } else if (state === 'lose') {
       comradeImage = "assets/dyatlov_rip.gif";
-      console.log(comradeImage.toString());
-      console.log("LOSS  " + comradeImage.toString());
+
       comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
     } else if (state === 'ingame'){
       comradeCam.style.display = 'block'; // Unhide the comrade
@@ -476,7 +474,6 @@ class Game {
 
   draw() {
     if (this.inMainMenu()) {
-      console.log("MAIN MENU");
       document.body.classList.add('main-menu');
 
       this.setHTMLBackgroundImage('menu');
@@ -488,7 +485,6 @@ class Game {
         this.play();
       }
     } else if (this.inGame()) {
-      console.log("IN GAME");
       this.setComradeImage('ingame');
       this.setHTMLBackgroundImage('ingame');
       this.setCanvasBackgroundImage('ingame');
@@ -499,7 +495,6 @@ class Game {
       this.ball.draw();
     } 
     else if (this.inWinScreen()) {
-      console.log("WIN SCREEN");
 
       this.setComradeImage('win');
       this.setCanvasBackgroundImage('win');
