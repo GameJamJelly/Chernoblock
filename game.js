@@ -646,11 +646,21 @@ class Game {
       comradeCam.style.backgroundImage = "url(" + comradeImage.toString() + ")";
     } else if (state === "ingame") {
       comradeCam.style.display = "block"; // Unhide the comrade
-      comradeImage = "assets/dyatlov_stare.png";
+      comradeImage = "assets/dyatlov_stare.gif";
+      if(this.healthMeter.health < 50) {
+        comradeImage = "assets/dyatlov_injured.gif";
+      }
+      else if(this.healthMeter.health < 150){
+        comradeImage = "assets/dyatlov_stare.gif";
+      }
+      else{
+        comradeImage = "assets/dyatlov_win.gif";
+      }
       comradeCam.style.backgroundImage = "url(" + comradeImage.toString() + ")";
+      console.log("INGAME STATE");
     } else if (state === "menu") {
       comradeCam.style.display = "none"; // Hide the comrade-cam
-      comradeImage = "assets/dyatlov_stare.png";
+      comradeImage = "assets/dyatlov_stare.gif";
     }
   }
 
@@ -696,7 +706,6 @@ class Game {
       this.setComradeImage("ingame");
       this.setHTMLBackgroundImage("ingame");
       this.setCanvasBackgroundImage("ingame");
-
       document.body.classList.remove("main-menu");
 
       this.drawingWall.draw();
