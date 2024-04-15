@@ -16,11 +16,9 @@ let ballImage;
 let enemyImage;
 let wallImage;
 let game;
-let backgroundImage;
-let menuImage;
+let htmlBGImage;
 let comradeImage;
-let winImage;
-let loseImage;
+let canvasBGImage
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -384,7 +382,11 @@ class Game {
       textSize: 20,
       rect: [325, 350, 150, 50],
     });
-
+    this.winButton = new GameButton({
+      text: "win instead :)",
+      textSize: 10,
+      rect: [350, 450, 100, 15],
+    });
     this.reset();
   }
 
@@ -428,42 +430,100 @@ class Game {
     return !this.playing && !this.won;
   }
 
-  draw() {
+  setComradeImage(state) {
     let comradeCam = document.querySelector('#comrade-cam');
-
-    if (this.inMainMenu()) {
-      document.body.style.backgroundImage = "url('assets/menu_screen_art_scaled.png')";
-      document.body.classList.add('main-menu');
+    if (state === 'win') {
+      comradeImage = "assets/dyatlov_win.gif";
+      console.log("WIN " + comradeImage.toString());
+      comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
+    } else if (state === 'lose') {
+      comradeImage = "assets/dyatlov_rip.gif";
+      console.log(comradeImage.toString());
+      console.log("LOSS  " + comradeImage.toString());
+      comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
+    } else if (state === 'ingame'){
+      comradeCam.style.display = 'block'; // Unhide the comrade
+      comradeImage = "assets/dyatlov_stare.png";
+      comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
+    }
+    else if (state === 'menu') {
       comradeCam.style.display = 'none'; // Hide the comrade-cam
+      comradeImage = "assets/dyatlov_stare.png";
+    }
+  }
+
+  setHTMLBackgroundImage(state) {
+    let body = document.querySelector('body');
+    if (state === 'menu') {
+      htmlBGImage = 'assets/menu_screen_art_scaled.png';
+      body.style.backgroundImage = 'url(' + htmlBGImage.toString() + ')';
+    } else if (state === 'ingame') {
+      htmlBGImage = 'assets/background_wide_siteres2.gif';
+      body.style.backgroundImage = 'url(' + htmlBGImage.toString() + ')';
+    }
+  }
+
+  setCanvasBackgroundImage(state) {
+    if (state === 'win') {
+      background(winImage);
+    } else if (state === 'lose') {
+      background(loseImage);
+    } else {
+      background(...backgroundColor);
+    }
+  }
+  
+
+  draw() {
+    if (this.inMainMenu()) {
+      console.log("MAIN MENU");
+      document.body.classList.add('main-menu');
+
+      this.setHTMLBackgroundImage('menu');
+      this.setComradeImage('menu');
+
       this.startText.draw();
       this.startButton.draw();
-
       if (this.startButton.clicking()) {
         this.play();
       }
     } else if (this.inGame()) {
-      document.body.style.backgroundImage = "url('assets/background_wide_siteres2.gif')";
+      console.log("IN GAME");
+      this.setComradeImage('ingame');
+      this.setHTMLBackgroundImage('ingame');
+      this.setCanvasBackgroundImage('ingame');
+
       document.body.classList.remove('main-menu');
-      comradeCam.style.display = 'block'; // Unhide the comrade
-      comradeCam.style.backgroundImage = 'url(' + comradeImage + ')';
 
       this.drawingWall.draw();
       this.ball.draw();
-    } else if (this.inWinScreen()) {
+    } 
+    else if (this.inWinScreen()) {
+      console.log("WIN SCREEN");
+
+      this.setComradeImage('win');
+      this.setCanvasBackgroundImage('win');
+
       this.winText.draw();
       this.playAgainButton.draw();
-
+      
       if (this.playAgainButton.clicking()) {
         this.play();
       }
-    } else if (this.inLoseScreen()) {
+    }
+    else if (this.inLoseScreen()) {
+      this.setComradeImage('lose');
+      this.setCanvasBackgroundImage('lose');
+
       this.loseText.draw();
       this.playAgainButton.draw();
-      comradeImage = "assets/dyatlov_rip.gif";
-      comradeCam.style.backgroundImage = 'url(' + comradeImage + ')';
-      background(loseImage);
+      this.winButton.draw();
+      
       if (this.playAgainButton.clicking()) {
         this.play();
+      }
+      else if(this.winButton.clicking()) {
+        this.win();
       }
     }
   }
@@ -474,7 +534,7 @@ function setup() {
   stroke(255);
   frameRate(60);
 
-  comradeImage = "assets/dyatlov_stare.png";
+  comradeImage = loadImage("assets/dyatlov_stare.png");
   ballImage = loadImage("assets/ball.png");
   enemyImage = loadImage("assets/enemy.png");
   wallImage = loadImage("assets/wall.png");
