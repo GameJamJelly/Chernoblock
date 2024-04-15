@@ -12,11 +12,15 @@ const defaultTextSize = 16;
 const defaultTextColor = [0, 0, 0];
 const defaultButtonBackgroundColor = [0, 191, 0];
 const defaultButtonTextColor = [255, 255, 255];
-let playerImage;
 let ballImage;
 let enemyImage;
 let wallImage;
 let game;
+let backgroundImage;
+let menuImage;
+let comradeImage;
+let winImage;
+let loseImage;
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -425,7 +429,12 @@ class Game {
   }
 
   draw() {
+    let comradeCam = document.querySelector('#comrade-cam');
+
     if (this.inMainMenu()) {
+      document.body.style.backgroundImage = "url('assets/menu_screen_art_scaled.png')";
+      document.body.classList.add('main-menu');
+      comradeCam.style.display = 'none'; // Hide the comrade-cam
       this.startText.draw();
       this.startButton.draw();
 
@@ -433,6 +442,11 @@ class Game {
         this.play();
       }
     } else if (this.inGame()) {
+      document.body.style.backgroundImage = "url('assets/background_wide_siteres2.gif')";
+      document.body.classList.remove('main-menu');
+      comradeCam.style.display = 'block'; // Unhide the comrade
+      comradeCam.style.backgroundImage = 'url(' + comradeImage + ')';
+
       this.drawingWall.draw();
       this.ball.draw();
     } else if (this.inWinScreen()) {
@@ -445,7 +459,9 @@ class Game {
     } else if (this.inLoseScreen()) {
       this.loseText.draw();
       this.playAgainButton.draw();
-
+      comradeImage = "assets/dyatlov_rip.gif";
+      comradeCam.style.backgroundImage = 'url(' + comradeImage + ')';
+      background(loseImage);
       if (this.playAgainButton.clicking()) {
         this.play();
       }
@@ -458,11 +474,12 @@ function setup() {
   stroke(255);
   frameRate(60);
 
-  playerImage = loadImage("assets/player.png");
+  comradeImage = "assets/dyatlov_stare.png";
   ballImage = loadImage("assets/ball.png");
   enemyImage = loadImage("assets/enemy.png");
   wallImage = loadImage("assets/wall.png");
-
+  winImage = loadImage("assets/win.png");
+  loseImage = loadImage("assets/loser.png");
   game = new Game();
 }
 
