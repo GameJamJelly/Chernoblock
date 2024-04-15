@@ -1,17 +1,22 @@
 const wallImageWidth = 64;
 const wallImageHeight = 16;
 const wallDepth = 16;
+const ballSpeed = 4;
+const ballRadius = 8;
 const startingHealth = 100;
 const enemyRows = 5;
 const enemyColumns = 10;
+const backgroundColor = [191, 191, 191];
+const edgeColor = [0, 0, 0];
 const defaultTextSize = 16;
-const defaultTextColor = [255, 255, 255];
+const defaultTextColor = [0, 0, 0];
 const defaultButtonBackgroundColor = [0, 191, 0];
 const defaultButtonTextColor = [255, 255, 255];
 let playerImage;
 let ballImage;
 let enemyImage;
 let wallImage;
+let game;
 
 function wallRect(x1, y1, x2, y2) {
   const angle = Math.atan2(y2 - y1, x2 - x1) + Math.PI / 2;
@@ -59,20 +64,6 @@ function drawWall(rect, opacity) {
   image(wallImage, 0, 0, rectWidth, rectHeight);
 
   pop();
-}
-
-class Player {
-  constructor(x, y, d, color) {
-    this.x = x;
-    this.y = y;
-    this.d = d;
-    this.r = d / 2;
-    this.color = color;
-    this.vel = {
-      x: 1,
-      y: 1,
-    };
-  }
 }
 
 class Point {
@@ -169,6 +160,14 @@ class DrawingWall {
     this.startX = undefined;
     this.startY = undefined;
   }
+
+  draw() {
+    if (this.drawing && !(this.startX === mouseX && this.startY === mouseY)) {
+      drawWall(wallRect(this.startX, this.startY, mouseX, mouseY), 0.6);
+    } else if (this.rect !== undefined) {
+      drawWall(this.rect, 1.0);
+    }
+  }
 }
 
 class GameText {
@@ -231,6 +230,56 @@ class GameButton {
   }
 }
 
+class Ball {
+  constructor(position) {
+    this.position = position;
+    this.direction = undefined;
+  }
+
+  startMoving(x, y) {
+    this.direction = Math.atan2(y - this.position.y, x - this.position.x);
+  }
+
+  update() {
+    if (this.direction !== undefined) {
+      this.position = new Point(
+        this.position.x + ballSpeed * Math.cos(this.direction),
+        this.position.y + ballSpeed * Math.sin(this.direction)
+      );
+    }
+
+    if (this.position.y >= height) {
+      game.lose();
+      return;
+    }
+
+    if (this.position.x < 0 || this.position.x >= width) {
+      const directionX = Math.cos(this.direction);
+      const directionY = Math.sin(this.direction);
+      this.direction = Math.atan2(directionY, -directionX);
+    }
+
+    if (this.position.y < 0) {
+      const directionX = Math.cos(this.direction);
+      const directionY = Math.sin(this.direction);
+      this.direction = Math.atan2(-directionY, directionX);
+    }
+  }
+
+  draw() {
+    this.update();
+
+    push();
+
+    // TODO: display image
+    stroke(0);
+    fill(255);
+    circle(this.position.x, this.position.y, ballRadius * 2);
+
+    pop();
+  }
+}
+
 class Game {
   constructor() {
     this.played = false;
@@ -263,11 +312,18 @@ class Game {
       rect: [325, 350, 150, 50],
     });
 
+    this.reset();
+  }
+
+  reset() {
+    this.drawingWall = new DrawingWall();
+    this.ball = new Ball(new Point(width / 2, height - 100));
     // this.enemies = ;
     this.health = startingHealth;
   }
 
   play() {
+    this.reset();
     this.playing = true;
   }
 
@@ -300,10 +356,7 @@ class Game {
   }
 
   draw() {
-    push();
-
     if (this.inMainMenu()) {
-      // TODO: draw game start state in background
       this.startText.draw();
       this.startButton.draw();
 
@@ -311,9 +364,9 @@ class Game {
         this.play();
       }
     } else if (this.inGame()) {
-      // TODO: draw the game
+      this.drawingWall.draw();
+      this.ball.draw();
     } else if (this.inWinScreen()) {
-      // TODO: draw final game state in background
       this.winText.draw();
       this.playAgainButton.draw();
 
@@ -321,7 +374,6 @@ class Game {
         this.play();
       }
     } else if (this.inLoseScreen()) {
-      // TODO: draw final game state in background
       this.loseText.draw();
       this.playAgainButton.draw();
 
@@ -329,77 +381,47 @@ class Game {
         this.play();
       }
     }
-
-    pop();
   }
 }
-
-const game = new Game();
-const drawingWall = new DrawingWall();
-const circle1 = new Player(50, 50, 16, "red");
 
 function setup() {
   createCanvas(800, 600);
   stroke(255);
-  frameRate(30);
+  frameRate(60);
 
   playerImage = loadImage("assets/player.png");
   ballImage = loadImage("assets/ball.png");
   enemyImage = loadImage("assets/enemy.png");
   wallImage = loadImage("assets/wall.png");
+
+  game = new Game();
 }
 
 function draw() {
-  stroke(255);
-  background(0);
-
-  if (
-    drawingWall.drawing &&
-    !(drawingWall.startX === mouseX && drawingWall.startY === mouseY)
-  ) {
-    drawWall(
-      wallRect(drawingWall.startX, drawingWall.startY, mouseX, mouseY),
-      0.6
-    );
-  } else if (drawingWall.rect !== undefined) {
-    drawWall(drawingWall.rect, 1.0);
-  }
-
-  strokeWeight(0);
-  if (checkWallCollision()) {
-    fill(63, 0, 255);
-  } else {
-    fill(255);
-  }
+  stroke(0);
+  background(...backgroundColor);
 
   game.draw();
-  updatePlayerCoor();
-}
-
-function updatePlayerCoor() {
-  circle1.x = circle1.x + circle1.vel.x;
-  circle1.y = circle1.y + circle1.vel.y;
-  circle(circle1.x, circle1.y, circle1.d);
-}
-
-function checkWallCollision() {
-  return drawingWall.rect !== undefined
-    ? drawingWall.rect.pointInside(new Point(circle1.x, circle1.y))
-    : false;
 }
 
 function mousePressed() {
   if (game.inGame()) {
-    drawingWall.drawStart(mouseX, mouseY);
+    if (game.ball.direction === undefined) {
+      game.ball.startMoving(mouseX, mouseY);
+    } else {
+      game.drawingWall.drawStart(mouseX, mouseY);
+    }
   }
 }
 
 function mouseReleased() {
   if (
     game.inGame() &&
-    drawingWall.drawing &&
-    !(drawingWall.startX === mouseX && drawingWall.startY === mouseY)
+    game.drawingWall.drawing &&
+    !(game.drawingWall.startX === mouseX && game.drawingWall.startY === mouseY)
   ) {
-    drawingWall.drawEnd(mouseX, mouseY);
+    game.drawingWall.drawEnd(mouseX, mouseY);
+  } else {
+    game.drawingWall.clearDrawing();
   }
 }
