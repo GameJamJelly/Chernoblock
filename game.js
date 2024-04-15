@@ -1,8 +1,65 @@
+const wallImageWidth = 64;
+const wallImageHeight = 16;
 const wallDepth = 16;
+const startingHealth = 100;
+const enemyRows = 5;
+const enemyColumns = 10;
 const defaultTextSize = 16;
 const defaultTextColor = [255, 255, 255];
 const defaultButtonBackgroundColor = [0, 191, 0];
 const defaultButtonTextColor = [255, 255, 255];
+let playerImage;
+let ballImage;
+let enemyImage;
+let wallImage;
+
+function wallRect(x1, y1, x2, y2) {
+  const angle = Math.atan2(y2 - y1, x2 - x1) + Math.PI / 2;
+  const p1 = new Point(
+    x1 - (wallDepth / 2) * Math.cos(angle),
+    y1 - (wallDepth / 2) * Math.sin(angle)
+  );
+  const p2 = new Point(
+    x1 - (wallDepth / 2) * Math.cos(angle + Math.PI),
+    y1 - (wallDepth / 2) * Math.sin(angle + Math.PI)
+  );
+  const p3 = new Point(
+    x2 - (wallDepth / 2) * Math.cos(angle + Math.PI),
+    y2 - (wallDepth / 2) * Math.sin(angle + Math.PI)
+  );
+  const p4 = new Point(
+    x2 - (wallDepth / 2) * Math.cos(angle),
+    y2 - (wallDepth / 2) * Math.sin(angle)
+  );
+
+  return new Rectangle(
+    new Line(p1, p2),
+    new Line(p2, p3),
+    new Line(p3, p4),
+    new Line(p4, p1)
+  );
+}
+
+function drawWall(rect, opacity) {
+  const x = (rect.l1.p1.x + rect.l3.p1.x) / 2;
+  const y = (rect.l1.p1.y + rect.l3.p1.y) / 2;
+  const rectWidth = rect.l2.length();
+  const rectHeight = rect.l1.length();
+  const rotation = Math.atan2(
+    rect.l4.p1.y - rect.l4.p2.y,
+    rect.l4.p1.x - rect.l4.p2.x
+  );
+
+  push();
+
+  imageMode(CENTER);
+  translate(x, y);
+  rotate(rotation);
+  tint(255, opacity * 255);
+  image(wallImage, 0, 0, rectWidth, rectHeight);
+
+  pop();
+}
 
 class Player {
   constructor(x, y, d, color) {
@@ -66,18 +123,21 @@ class Rectangle {
   draw() {
     push();
 
-    stroke(255);
     strokeWeight(2);
+    stroke(255, 0, 0);
     line(this.l1.p1.x, this.l1.p1.y, this.l1.p2.x, this.l1.p2.y);
+    stroke(0, 255, 0);
     line(this.l2.p1.x, this.l2.p1.y, this.l2.p2.x, this.l2.p2.y);
+    stroke(0, 0, 255);
     line(this.l3.p1.x, this.l3.p1.y, this.l3.p2.x, this.l3.p2.y);
+    stroke(255);
     line(this.l4.p1.x, this.l4.p1.y, this.l4.p2.x, this.l4.p2.y);
 
     pop();
   }
 }
 
-class DrawingLine {
+class DrawingWall {
   constructor() {
     this.drawing = false;
     this.line = undefined;
@@ -95,32 +155,9 @@ class DrawingLine {
   }
 
   drawEnd(x, y) {
-    const angle = Math.atan2(y - this.startY, x - this.startX) + Math.PI / 2;
-    const p1 = new Point(
-      this.startX - (wallDepth / 2) * Math.cos(angle),
-      this.startY - (wallDepth / 2) * Math.sin(angle)
-    );
-    const p2 = new Point(
-      this.startX - (wallDepth / 2) * Math.cos(angle + Math.PI),
-      this.startY - (wallDepth / 2) * Math.sin(angle + Math.PI)
-    );
-    const p3 = new Point(
-      x - (wallDepth / 2) * Math.cos(angle + Math.PI),
-      y - (wallDepth / 2) * Math.sin(angle + Math.PI)
-    );
-    const p4 = new Point(
-      x - (wallDepth / 2) * Math.cos(angle),
-      y - (wallDepth / 2) * Math.sin(angle)
-    );
-
     this.drawing = false;
     this.line = new Line(new Point(this.startX, this.startY), new Point(x, y));
-    this.rect = new Rectangle(
-      new Line(p1, p2),
-      new Line(p2, p3),
-      new Line(p3, p4),
-      new Line(p4, p1)
-    );
+    this.rect = wallRect(this.startX, this.startY, x, y);
     this.startX = undefined;
     this.startY = undefined;
   }
@@ -199,6 +236,7 @@ class Game {
     this.played = false;
     this.playing = false;
     this.won = false;
+
     this.startText = new GameText({
       text: "The Blockening",
       textSize: 48,
@@ -224,6 +262,9 @@ class Game {
       textSize: 20,
       rect: [325, 350, 150, 50],
     });
+
+    // this.enemies = ;
+    this.health = startingHealth;
   }
 
   play() {
@@ -294,35 +335,34 @@ class Game {
 }
 
 const game = new Game();
-const drawing = new DrawingLine();
+const drawingWall = new DrawingWall();
 const circle1 = new Player(50, 50, 16, "red");
 
 function setup() {
   createCanvas(800, 600);
   stroke(255);
   frameRate(30);
+
+  playerImage = loadImage("assets/player.png");
+  ballImage = loadImage("assets/ball.png");
+  enemyImage = loadImage("assets/enemy.png");
+  wallImage = loadImage("assets/wall.png");
 }
 
 function draw() {
   stroke(255);
   background(0);
 
-  if (drawing.drawing) {
-    stroke(255, 0, 0);
-    strokeWeight(2);
-    line(drawing.startX, drawing.startY, mouseX, mouseY);
-  } else if (drawing.rect !== undefined) {
-    drawing.rect.draw();
-    push();
-    stroke(255, 0, 0);
-    strokeWeight(2);
-    line(
-      drawing.line.p1.x,
-      drawing.line.p1.y,
-      drawing.line.p2.x,
-      drawing.line.p2.y
+  if (
+    drawingWall.drawing &&
+    !(drawingWall.startX === mouseX && drawingWall.startY === mouseY)
+  ) {
+    drawWall(
+      wallRect(drawingWall.startX, drawingWall.startY, mouseX, mouseY),
+      0.6
     );
-    pop();
+  } else if (drawingWall.rect !== undefined) {
+    drawWall(drawingWall.rect, 1.0);
   }
 
   strokeWeight(0);
@@ -343,15 +383,23 @@ function updatePlayerCoor() {
 }
 
 function checkWallCollision() {
-  return drawing.rect !== undefined
-    ? drawing.rect.pointInside(new Point(circle1.x, circle1.y))
+  return drawingWall.rect !== undefined
+    ? drawingWall.rect.pointInside(new Point(circle1.x, circle1.y))
     : false;
 }
 
 function mousePressed() {
-  drawing.drawStart(mouseX, mouseY);
+  if (game.inGame()) {
+    drawingWall.drawStart(mouseX, mouseY);
+  }
 }
 
 function mouseReleased() {
-  drawing.drawEnd(mouseX, mouseY);
+  if (
+    game.inGame() &&
+    drawingWall.drawing &&
+    !(drawingWall.startX === mouseX && drawingWall.startY === mouseY)
+  ) {
+    drawingWall.drawEnd(mouseX, mouseY);
+  }
 }
