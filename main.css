@@ -15,13 +15,13 @@ body {
     background-position: 0 0;
   }
   100% {
-    background-position: 100vw 100vh;
+    background-position: 997px 761px;
   }
 }
 
 body.main-menu {
   background-repeat: repeat;
-  animation: diagonalScroll 60s linear infinite;
+  animation: diagonalScroll 30s linear infinite;
 }
 
 main {
@@ -29,13 +29,15 @@ main {
   justify-content: center;
   align-items: center;
 }
-#game-container{
+
+#game-container {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 80vw; /* Adjust as needed */
 }
-#comrade-cam{
+
+#comrade-cam {
   display: none;
   position: absolute;
   left: 15vw;
@@ -43,12 +45,11 @@ main {
   height: 256px;
   border: 4px solid #000;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-
 }
-#comrade-cam p{
+
+#comrade-cam p {
   color: #fff; /* A bold color for the text */
   text-shadow: 1px 1px 2px #000; /* Adds a shadow to the text to make it more readable */
   text-align: center; /* Centers the text */
   background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
-
 }

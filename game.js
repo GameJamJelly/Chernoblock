@@ -21,7 +21,7 @@ let wallImage;
 let game;
 let htmlBGImage;
 let comradeImage;
-let canvasBGImage
+let canvasBGImage;
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -492,8 +492,23 @@ class Enemy {
   }
 
   draw() {
-    // TODO: display enemy image
-    this.rect.draw();
+    const enemyWidth = width / enemyColumns;
+    const enemyHeight = enemyWidth * 0.6;
+    const enemyTopOffset = 2 * enemyHeight;
+
+    const row = Math.floor(this.index / enemyColumns);
+    const column = this.index % enemyColumns;
+
+    const imageX = enemyWidth * (column + 0.5);
+    const imageY = enemyHeight * (row + 0.5) + enemyTopOffset;
+    const imageSize = enemyHeight * 0.8;
+
+    push();
+
+    imageMode(CENTER);
+    image(enemyImage, imageX, imageY, imageSize, imageSize);
+
+    pop();
   }
 }
 
@@ -619,53 +634,51 @@ class Game {
   }
 
   setComradeImage(state) {
-    let comradeCam = document.querySelector('#comrade-cam');
-    if (state === 'win') {
+    let comradeCam = document.querySelector("#comrade-cam");
+    if (state === "win") {
       comradeImage = "assets/dyatlov_win.gif";
-      comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
-    } else if (state === 'lose') {
+      comradeCam.style.backgroundImage = "url(" + comradeImage.toString() + ")";
+    } else if (state === "lose") {
       comradeImage = "assets/dyatlov_rip.gif";
 
-      comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
-    } else if (state === 'ingame'){
-      comradeCam.style.display = 'block'; // Unhide the comrade
+      comradeCam.style.backgroundImage = "url(" + comradeImage.toString() + ")";
+    } else if (state === "ingame") {
+      comradeCam.style.display = "block"; // Unhide the comrade
       comradeImage = "assets/dyatlov_stare.png";
-      comradeCam.style.backgroundImage = 'url(' + comradeImage.toString() + ')';
-    }
-    else if (state === 'menu') {
-      comradeCam.style.display = 'none'; // Hide the comrade-cam
+      comradeCam.style.backgroundImage = "url(" + comradeImage.toString() + ")";
+    } else if (state === "menu") {
+      comradeCam.style.display = "none"; // Hide the comrade-cam
       comradeImage = "assets/dyatlov_stare.png";
     }
   }
 
   setHTMLBackgroundImage(state) {
-    let body = document.querySelector('body');
-    if (state === 'menu') {
-      htmlBGImage = 'assets/menu_screen_art_scaled.png';
-      body.style.backgroundImage = 'url(' + htmlBGImage.toString() + ')';
-    } else if (state === 'ingame') {
-      htmlBGImage = 'assets/background_wide_siteres2.gif';
-      body.style.backgroundImage = 'url(' + htmlBGImage.toString() + ')';
+    let body = document.querySelector("body");
+    if (state === "menu") {
+      htmlBGImage = "assets/menu_screen_art_scaled.png";
+      body.style.backgroundImage = "url(" + htmlBGImage.toString() + ")";
+    } else if (state === "ingame") {
+      htmlBGImage = "assets/background_wide_siteres2.gif";
+      body.style.backgroundImage = "url(" + htmlBGImage.toString() + ")";
     }
   }
 
   setCanvasBackgroundImage(state) {
-    if (state === 'win') {
+    if (state === "win") {
       background(winImage);
-    } else if (state === 'lose') {
+    } else if (state === "lose") {
       background(loseImage);
     } else {
       background(...backgroundColor);
     }
   }
-  
 
   draw() {
     if (this.inMainMenu()) {
-      document.body.classList.add('main-menu');
+      document.body.classList.add("main-menu");
 
-      this.setHTMLBackgroundImage('menu');
-      this.setComradeImage('menu');
+      this.setHTMLBackgroundImage("menu");
+      this.setComradeImage("menu");
 
       this.startText.draw();
       this.startButton.draw();
@@ -673,11 +686,11 @@ class Game {
         this.play();
       }
     } else if (this.inGame()) {
-      this.setComradeImage('ingame');
-      this.setHTMLBackgroundImage('ingame');
-      this.setCanvasBackgroundImage('ingame');
+      this.setComradeImage("ingame");
+      this.setHTMLBackgroundImage("ingame");
+      this.setCanvasBackgroundImage("ingame");
 
-      document.body.classList.remove('main-menu');
+      document.body.classList.remove("main-menu");
 
       this.drawingWall.draw();
       this.ball.draw();
@@ -692,28 +705,26 @@ class Game {
         this.win();
       }
     } else if (this.inWinScreen()) {
-      this.setComradeImage('win');
-      this.setCanvasBackgroundImage('win');
+      this.setComradeImage("win");
+      this.setCanvasBackgroundImage("win");
 
       this.winText.draw();
       this.playAgainButton.draw();
-      
+
       if (this.playAgainButton.clicking()) {
         this.play();
       }
-    }
-    else if (this.inLoseScreen()) {
-      this.setComradeImage('lose');
-      this.setCanvasBackgroundImage('lose');
+    } else if (this.inLoseScreen()) {
+      this.setComradeImage("lose");
+      this.setCanvasBackgroundImage("lose");
 
       this.loseText.draw();
       this.playAgainButton.draw();
       this.winButton.draw();
-      
+
       if (this.playAgainButton.clicking()) {
         this.play();
-      }
-      else if(this.winButton.clicking()) {
+      } else if (this.winButton.clicking()) {
         this.win();
       }
     }
@@ -726,9 +737,9 @@ function setup() {
   frameRate(60);
 
   comradeImage = loadImage("assets/dyatlov_stare.png");
-  ballImage = loadImage("assets/ball.png");
-  enemyImage = loadImage("assets/enemy.png");
-  wallImage = loadImage("assets/wall.png");
+  ballImage = loadImage("assets/neutron.png");
+  enemyImage = loadImage("assets/u235.png");
+  wallImage = loadImage("assets/graphite.png");
   winImage = loadImage("assets/win.png");
   loseImage = loadImage("assets/loser.png");
   game = new Game();
