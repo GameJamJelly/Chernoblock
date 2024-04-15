@@ -532,14 +532,6 @@ class HealthMeter {
   draw() {
     push();
 
-    imageMode(CORNER);
-    translate(width - 8, 8);
-    rotate(Math.PI / 2);
-    image(wallImage, 0, 0, 32, 16);
-
-    pop();
-    push();
-
     textAlign(RIGHT, CENTER);
     textSize(24);
     strokeWeight(0);
@@ -548,7 +540,7 @@ class HealthMeter {
     } else {
       fill(255, 0, 0);
     }
-    text(this.health.toString(), width - 32, 24);
+    text(`${this.health.toString()} \u{440}\u{443}\u{431}`, width - 8, 24);
 
     pop();
   }
