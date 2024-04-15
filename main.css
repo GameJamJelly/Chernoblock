@@ -2,7 +2,7 @@ html,
 body {
   padding: 0;
   margin: 0;
-  background-color: #1b1b1b;
+  background-color: grey;
   width: 100vw;
   height: 100vh;
   display: flex;
@@ -10,8 +10,45 @@ body {
   align-items: center;
 }
 
+@keyframes diagonalScroll {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 100vw 100vh;
+  }
+}
+
+body.main-menu {
+  background-repeat: repeat;
+  animation: diagonalScroll 60s linear infinite;
+}
+
 main {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+#game-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80vw; /* Adjust as needed */
+}
+#comrade-cam{
+  display: none;
+  position: absolute;
+  left: 15vw;
+  width: 256px;
+  height: 256px;
+  border: 4px solid #000;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+
+}
+#comrade-cam p{
+  color: #fff; /* A bold color for the text */
+  text-shadow: 1px 1px 2px #000; /* Adds a shadow to the text to make it more readable */
+  text-align: center; /* Centers the text */
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+
 }
