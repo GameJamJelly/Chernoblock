@@ -545,7 +545,7 @@ class HealthMeter {
     } else {
       fill(255, 0, 0);
     }
-    text(`${this.health} rub`, width - 8, 24);
+    text(`${this.health} rub`, width - 10, 18);
 
     pop();
   }
