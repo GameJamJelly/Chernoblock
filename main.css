@@ -1,3 +1,8 @@
+@font-face {
+  font-family: Comdot;
+  src: url("assets/Comdotbold-JRW7.ttf");
+}
+
 html,
 body {
   padding: 0;
@@ -8,6 +13,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  font-family: Comdot;
 }
 
 @keyframes diagonalScroll {
@@ -37,19 +43,23 @@ main {
   width: 80vw; /* Adjust as needed */
 }
 
-#comrade-cam {
+#comrade-cam-container {
   display: none;
   position: absolute;
   left: 15vw;
-  width: 256px;
-  height: 256px;
   border: 4px solid #000;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-#comrade-cam p {
+#comrade-cam-title {
+  font-size: 16pt;
   color: #fff; /* A bold color for the text */
   text-shadow: 1px 1px 2px #000; /* Adds a shadow to the text to make it more readable */
   text-align: center; /* Centers the text */
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+  background-color: black;
+}
+
+#comrade-cam {
+  width: 256px;
+  height: 256px;
 }
