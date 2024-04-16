@@ -25,6 +25,7 @@ let menuBgImage;
 let ingameBgImage;
 let winImage;
 let loseImage;
+let collisionImage;
 let mainFont;
 
 function normalizeAngle(angle) {
@@ -425,6 +426,7 @@ class Ball {
       if (collisionLine !== null) {
         this.bounce(collisionLine);
         // TODO: wall destruction animation
+        //image(collisionImage, this.position.x-32, this.position.y-32, 64, 64);
         game.drawingWall.clearDrawing();
       }
     }
@@ -443,6 +445,7 @@ class Ball {
     for (const enemyIndex of enemyCollisions) {
       // TODO: enemy destruction animation
       game.enemies.splice(enemyIndex, 1);
+      //image(collisionImage, this.position.x-32, this.position.y-32, 64, 64); // Display the collision image
       game.healthMeter.gain(healthPerEnemyDestroyed);
     }
   }
@@ -757,10 +760,9 @@ function setup() {
   loseImage = loadImage("assets/loser.png");
   menuBgImage = loadImage("assets/main_menu_bg.png");
   ingameBgImage = loadImage("assets/ingame_bg.gif");
+  collisionImage = loadImage("assets/graphite_particles_blue.gif"); // Load the GIF as an animation
   mainFont = loadFont("assets/Comdotbold-JRW7.ttf");
-
   textFont(mainFont);
-
   game = new Game();
 }
 
