@@ -462,6 +462,40 @@ class Ball {
     );
 
     pop();
+
+    if (this.direction === undefined) {
+      const lineStartDistance = 20;
+      const lineEndDistance = 100;
+      const headDistance = 15;
+      const pointingAngle = new Line(
+        new Point(this.position.x, this.position.y),
+        new Point(mouseX, mouseY)
+      ).angle();
+      const arrowStartX =
+        this.position.x + lineStartDistance * Math.cos(pointingAngle);
+      const arrowStartY =
+        this.position.y + lineStartDistance * Math.sin(pointingAngle);
+      const arrowEndX =
+        this.position.x + lineEndDistance * Math.cos(pointingAngle);
+      const arrowEndY =
+        this.position.y + lineEndDistance * Math.sin(pointingAngle);
+      const headAngle1 = normalizeAngle(pointingAngle - (3 * Math.PI) / 4);
+      const headAngle2 = normalizeAngle(pointingAngle + (3 * Math.PI) / 4);
+      const head1X = arrowEndX + headDistance * Math.cos(headAngle1);
+      const head1Y = arrowEndY + headDistance * Math.sin(headAngle1);
+      const head2X = arrowEndX + headDistance * Math.cos(headAngle2);
+      const head2Y = arrowEndY + headDistance * Math.sin(headAngle2);
+
+      push();
+
+      strokeWeight(3);
+      stroke(255);
+      line(arrowStartX, arrowStartY, arrowEndX, arrowEndY);
+      line(arrowEndX, arrowEndY, head1X, head1Y);
+      line(arrowEndX, arrowEndY, head2X, head2Y);
+
+      pop();
+    }
   }
 }
 
