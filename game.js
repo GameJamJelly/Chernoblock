@@ -27,6 +27,9 @@ let winImage;
 let loseImage;
 let collisionImage;
 let mainFont;
+let menuSound;
+let winSound;
+let soundImage;
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -588,6 +591,31 @@ class HealthMeter {
   }
 }
 
+class IconButton {
+  constructor(image, rect, onclick) {
+    this.image = image;
+    this.rect = rect;
+    this.onclick = onclick;
+    this.clicked = false;
+  }
+
+  draw() {
+    image(this.image, this.rect[0], this.rect[1], this.rect[2], this.rect[3]);
+
+    if (
+      !this.clicked &&
+      mouseIsPressed &&
+      mouseX >= this.rect[0] &&
+      mouseX < this.rect[0] + this.rect[2] &&
+      mouseY >= this.rect[1] &&
+      mouseY < this.rect[1] + this.rect[3]
+    ) {
+      this.clicked = true;
+      this.onclick();
+    }
+  }
+}
+
 class Game {
   constructor() {
     this.played = false;
@@ -625,11 +653,18 @@ class Game {
       textSize: 28,
       rect: [425, 527, 150, 50],
     });
+    this.soundIcon = new IconButton(soundImage, [745, 15, 40, 40], () => {
+      menuSound.loop();
+    });
 
     this.reset();
+
+    // TODO: trigger audio loop
   }
 
   reset() {
+    winSound.stop();
+
     this.drawingWall = new DrawingWall();
     this.ball = new Ball(new Point(width / 2, height - 100));
     this.healthMeter = new HealthMeter();
@@ -643,9 +678,15 @@ class Game {
   play() {
     this.reset();
     this.playing = true;
+
+    if (!menuSound.isPlaying()) {
+      menuSound.loop();
+    }
   }
 
   win() {
+    menuSound.stop();
+    winSound.loop();
     this.played = true;
     this.playing = false;
     this.won = true;
@@ -653,6 +694,7 @@ class Game {
   }
 
   lose() {
+    menuSound.stop();
     this.played = true;
     this.playing = false;
     this.won = false;
@@ -736,6 +778,7 @@ class Game {
       this.setComradeImage("menu");
       this.setCanvasBackgroundImage("menu");
 
+      this.soundIcon.draw();
       this.startText.draw();
       this.startButton.draw();
       if (this.startButton.clicking()) {
@@ -785,6 +828,16 @@ class Game {
   }
 }
 
+function preload() {
+  soundFormats("mp3");
+  menuSound = loadSound("assets/chernoblock.mp3", () => {
+    menuSound.setVolume(0.2);
+  });
+  winSound = loadSound("assets/win.mp3", () => {
+    winSound.setVolume(0.15);
+  });
+}
+
 function setup() {
   createCanvas(800, 600);
   stroke(255);
@@ -800,7 +853,10 @@ function setup() {
   ingameBgImage = loadImage("assets/ingame_bg.gif");
   collisionImage = loadImage("assets/graphite_particles_blue.gif"); // Load the GIF as an animation
   mainFont = loadFont("assets/Comdotbold-JRW7.ttf");
+  soundImage = loadImage("assets/sound.png");
+
   textFont(mainFont);
+
   game = new Game();
 }
 
