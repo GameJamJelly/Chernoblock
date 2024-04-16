@@ -8,12 +8,12 @@ const startingHealth = 100;
 const healthPerEnemyDestroyed = 50;
 const enemyRows = 5;
 const enemyColumns = 10;
-const backgroundColor = [191, 191, 191];
+const backgroundColor = [178, 200, 138];
 const edgeColor = [0, 0, 0];
 const defaultTextSize = 16;
 const defaultTextColor = [0, 0, 0];
 const defaultTextOutlineColor = [255, 255, 255];
-const defaultButtonBackgroundColor = [0, 191, 0];
+const defaultButtonBackgroundColor = [75, 93, 93];
 const defaultButtonTextColor = [255, 255, 255];
 let ballImage;
 let enemyImage;
@@ -26,6 +26,7 @@ let ingameBgImage;
 let winImage;
 let loseImage;
 let collisionImage;
+let mainFont;
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -328,6 +329,7 @@ class GameText {
 
     textAlign(CENTER, CENTER);
     textSize(this.textSize);
+    strokeWeight(0);
     fill(...this.textColor);
     text(this.text, ...this.pos);
 
@@ -453,10 +455,14 @@ class Ball {
 
     push();
 
-    // TODO: display image
-    stroke(0);
-    fill(255);
-    circle(this.position.x, this.position.y, ballRadius * 2);
+    imageMode(CENTER);
+    image(
+      ballImage,
+      this.position.x,
+      this.position.y,
+      ballRadius * 2,
+      ballRadius * 2
+    );
 
     pop();
   }
@@ -534,14 +540,6 @@ class HealthMeter {
   draw() {
     push();
 
-    imageMode(CORNER);
-    translate(width - 8, 8);
-    rotate(Math.PI / 2);
-    image(wallImage, 0, 0, 32, 16);
-
-    pop();
-    push();
-
     textAlign(RIGHT, CENTER);
     textSize(24);
     strokeWeight(0);
@@ -550,7 +548,7 @@ class HealthMeter {
     } else {
       fill(255, 0, 0);
     }
-    text(this.health.toString(), width - 32, 24);
+    text(`${this.health} rub`, width - 8, 24);
 
     pop();
   }
@@ -563,35 +561,37 @@ class Game {
     this.won = false;
 
     this.startText = new GameText({
-      text: "The Blockening",
-      textSize: 48,
+      text: "Chernoblock",
+      textSize: 72,
       pos: [400, 200],
     });
     this.startButton = new GameButton({
       text: "Start",
-      textSize: 20,
+      textSize: 32,
       rect: [325, 350, 150, 50],
     });
-    this.winText = new GameText({
-      text: "You Win!",
-      textSize: 48,
-      pos: [400, 200],
+    this.scoreText = new GameText({
+      text: "",
+      textSize: 32,
+      textColor: [242, 203, 50],
+      pos: [400, 185],
     });
-    this.loseText = new GameText({
-      text: "Game Over!",
-      textSize: 48,
-      pos: [400, 200],
-    });
-    this.playAgainButton = new GameButton({
+    this.winPlayAgainButton = new GameButton({
       text: "Play again",
-      textSize: 20,
-      rect: [325, 350, 150, 50],
+      textSize: 28,
+      rect: [325, 215, 150, 50],
     });
-    this.winButton = new GameButton({
-      text: "win instead :)",
-      textSize: 10,
-      rect: [350, 450, 100, 15],
+    this.losePlayAgainButton = new GameButton({
+      text: "Play again",
+      textSize: 28,
+      rect: [225, 527, 150, 50],
     });
+    this.lieButton = new GameButton({
+      text: "Lie",
+      textSize: 28,
+      rect: [425, 527, 150, 50],
+    });
+
     this.reset();
   }
 
@@ -615,6 +615,7 @@ class Game {
     this.played = true;
     this.playing = false;
     this.won = true;
+    this.scoreText.text = `Money saved: ${this.healthMeter.health} rub`;
   }
 
   lose() {
@@ -650,17 +651,14 @@ class Game {
     } else if (state === "ingame") {
       comradeCam.style.display = "block"; // Unhide the comrade
       comradeImage = "assets/dyatlov_stare.gif";
-      if(this.healthMeter.health < 50) {
+      if (this.healthMeter.health < 50) {
         comradeImage = "assets/dyatlov_injured.gif";
-      }
-      else if(this.healthMeter.health < 150){
+      } else if (this.healthMeter.health < 150) {
         comradeImage = "assets/dyatlov_stare.gif";
-      }
-      else{
+      } else {
         comradeImage = "assets/dyatlov_win.gif";
       }
       comradeCam.style.backgroundImage = "url(" + comradeImage.toString() + ")";
-      console.log("INGAME STATE");
     } else if (state === "menu") {
       comradeCam.style.display = "none"; // Hide the comrade-cam
       comradeImage = "assets/dyatlov_stare.gif";
@@ -683,9 +681,9 @@ class Game {
       background(winImage);
     } else if (state === "lose") {
       background(loseImage);
-    } else if (state === 'menu') {
+    } else if (state === "menu") {
       background(menuBgImage);
-    } else if (state === 'ingame') {
+    } else if (state === "ingame") {
       background(ingameBgImage);
     } else {
       background(...backgroundColor);
@@ -696,9 +694,9 @@ class Game {
     if (this.inMainMenu()) {
       document.body.classList.add("main-menu");
 
-      this.setHTMLBackgroundImage('menu');
-      this.setComradeImage('menu');
-      this.setCanvasBackgroundImage('menu');
+      this.setHTMLBackgroundImage("menu");
+      this.setComradeImage("menu");
+      this.setCanvasBackgroundImage("menu");
 
       this.startText.draw();
       this.startButton.draw();
@@ -727,23 +725,22 @@ class Game {
       this.setComradeImage("win");
       this.setCanvasBackgroundImage("win");
 
-      this.winText.draw();
-      this.playAgainButton.draw();
+      this.scoreText.draw();
+      this.winPlayAgainButton.draw();
 
-      if (this.playAgainButton.clicking()) {
+      if (this.winPlayAgainButton.clicking()) {
         this.play();
       }
     } else if (this.inLoseScreen()) {
       this.setComradeImage("lose");
       this.setCanvasBackgroundImage("lose");
 
-      this.loseText.draw();
-      this.playAgainButton.draw();
-      this.winButton.draw();
+      this.losePlayAgainButton.draw();
+      this.lieButton.draw();
 
-      if (this.playAgainButton.clicking()) {
+      if (this.losePlayAgainButton.clicking()) {
         this.play();
-      } else if (this.winButton.clicking()) {
+      } else if (this.lieButton.clicking()) {
         this.win();
       }
     }
@@ -764,6 +761,8 @@ function setup() {
   menuBgImage = loadImage("assets/main_menu_bg.png");
   ingameBgImage = loadImage("assets/ingame_bg.gif");
   collisionImage = loadImage("assets/graphite_particles_blue.gif"); // Load the GIF as an animation
+  mainFont = loadFont("assets/Comdotbold-JRW7.ttf");
+  textFont(mainFont);
   game = new Game();
 }
 
