@@ -30,6 +30,10 @@ let mainFont;
 let menuSound;
 let winSound;
 let soundImage;
+let collisionSheet;
+let testSheet;
+let testAnimation;
+
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -384,6 +388,8 @@ class Ball {
   constructor(position) {
     this.position = position;
     this.direction = undefined;
+    this.collisionAnimation = new Animation(collisionSheet, 120);
+    console.log(this.collisionAnimation);
   }
 
   startMoving(x, y) {
@@ -428,8 +434,8 @@ class Ball {
 
       if (collisionLine !== null) {
         this.bounce(collisionLine);
-        // TODO: wall destruction animation
-        //image(collisionImage, this.position.x-32, this.position.y-32, 64, 64);
+        // TODO: it blinks, need to fix
+        this.collisionAnimation.draw(this.position.x-32, this.position.y-32);
         game.drawingWall.clearDrawing();
       }
     }
@@ -828,6 +834,50 @@ class Game {
   }
 }
 
+//class to read an image and break it down into frames
+class SpriteSheet{
+  constructor(image, imageWidth, frameWidth, frameHeight){
+    //breaking down is happening here mostly
+    this.image = image;
+    this.frameWidth = frameWidth;
+    this.frameHeight = frameHeight;
+    this.imageWidth = imageWidth;
+    this.frames = Math.floor(imageWidth / frameWidth);
+  }
+  // draw a specific frame
+  drawFrame(frame, x, y){
+    console.log('drawing frame ' + frame);
+    const frameX = frame * this.frameWidth;
+    const frameY = 0;
+    image(this.image, x, y, this.frameWidth, this.frameHeight, frameX, frameY, this.frameWidth, this.frameHeight);
+  }
+
+}
+// takes a spritesheet and plays it frame by frame
+class Animation{
+  constructor(spriteSheet, frameSpeed){
+    this.spriteSheet = spriteSheet;
+    this.frameSpeed = frameSpeed;
+    this.currentFrame = 0;
+    this.frameCounter = frameCount;
+  }
+  //draws the current frame at the given x and y
+  draw(x, y){
+    let deltaFrames = frameCount - this.frameCounter;
+    console.log('current frame ' + this.currentFrame);
+    console.log('delta frames ' + deltaFrames);
+    if(deltaFrames >= this.frameSpeed){
+      this.spriteSheet.drawFrame(this.currentFrame, x, y);
+      this.currentFrame++;
+      this.frameCounter = frameCount;
+    }
+    if(this.currentFrame >= this.spriteSheet.frames){
+      this.currentFrame = 0;
+    }
+
+  }
+}
+
 function preload() {
   soundFormats("mp3");
   menuSound = loadSound("assets/chernoblock.mp3", () => {
@@ -851,9 +901,13 @@ function setup() {
   loseImage = loadImage("assets/loser.png");
   menuBgImage = loadImage("assets/main_menu_bg.png");
   ingameBgImage = loadImage("assets/ingame_bg.gif");
-  collisionImage = loadImage("assets/graphite_particles_blue.gif"); // Load the GIF as an animation
+  collisionImage = loadImage("assets/graphite_particles_blue.png"); // Load the image as an animation
   mainFont = loadFont("assets/Comdotbold-JRW7.ttf");
   soundImage = loadImage("assets/sound.png");
+
+  collisionSheet = new SpriteSheet(collisionImage,512, 64, 64);
+  testSheet = new SpriteSheet(collisionImage, 512, 64, 64);
+  testAnimation = new Animation(testSheet, 5);
 
   textFont(mainFont);
 
@@ -863,7 +917,8 @@ function setup() {
 function draw() {
   stroke(0);
   background(...backgroundColor);
-
+  //animation kinda works here, blinks between frames
+  testAnimation.draw(100, 100);
   game.draw();
 }
 
