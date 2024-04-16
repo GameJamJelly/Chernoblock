@@ -656,7 +656,6 @@ class Game {
         comradeImage = "assets/dyatlov_win.gif";
       }
       comradeCam.style.backgroundImage = "url(" + comradeImage.toString() + ")";
-      console.log("INGAME STATE");
     } else if (state === "menu") {
       comradeCam.style.display = "none"; // Hide the comrade-cam
       comradeImage = "assets/dyatlov_stare.gif";
