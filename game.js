@@ -452,10 +452,14 @@ class Ball {
 
     push();
 
-    // TODO: display image
-    stroke(0);
-    fill(255);
-    circle(this.position.x, this.position.y, ballRadius * 2);
+    imageMode(CENTER);
+    image(
+      ballImage,
+      this.position.x,
+      this.position.y,
+      ballRadius * 2,
+      ballRadius * 2
+    );
 
     pop();
   }
@@ -644,13 +648,11 @@ class Game {
     } else if (state === "ingame") {
       comradeCam.style.display = "block"; // Unhide the comrade
       comradeImage = "assets/dyatlov_stare.gif";
-      if(this.healthMeter.health < 50) {
+      if (this.healthMeter.health < 50) {
         comradeImage = "assets/dyatlov_injured.gif";
-      }
-      else if(this.healthMeter.health < 150){
+      } else if (this.healthMeter.health < 150) {
         comradeImage = "assets/dyatlov_stare.gif";
-      }
-      else{
+      } else {
         comradeImage = "assets/dyatlov_win.gif";
       }
       comradeCam.style.backgroundImage = "url(" + comradeImage.toString() + ")";
