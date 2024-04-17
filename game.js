@@ -33,6 +33,7 @@ let soundImage;
 let collisionSheet;
 let testSheet;
 let testAnimation;
+let animationQueue;
 
 
 function normalizeAngle(angle) {
@@ -388,8 +389,6 @@ class Ball {
   constructor(position) {
     this.position = position;
     this.direction = undefined;
-    this.collisionAnimation = new Animation(collisionSheet, 120);
-    console.log(this.collisionAnimation);
   }
 
   startMoving(x, y) {
@@ -434,8 +433,11 @@ class Ball {
 
       if (collisionLine !== null) {
         this.bounce(collisionLine);
-        // TODO: it blinks, need to fix
-        this.collisionAnimation.draw(this.position.x-32, this.position.y-32);
+        
+        //Adds animation to the queue
+        const collisionAnimation = new Animation(collisionSheet, 10, this.position.x-32, this.position.y-32);
+        animationQueue.addAnimation(collisionAnimation);
+
         game.drawingWall.clearDrawing();
       }
     }
@@ -452,9 +454,14 @@ class Ball {
     }
 
     for (const enemyIndex of enemyCollisions) {
-      // TODO: enemy destruction animation
       game.enemies.splice(enemyIndex, 1);
-      //image(collisionImage, this.position.x-32, this.position.y-32, 64, 64); // Display the collision image
+      // TODO: enemy destruction animation
+      // This probably doesnt work because the for iteration only gets executed once
+      // The animation instead requires a continuous draw loop
+      // Maybe we can offload the animations to a queue and play them at the end of the collision logic
+      // Perhaps an animation player that has a queue of animations to play
+      const collisionAnimation = new Animation(collisionSheet, 10, this.position.x-32, this.position.y-32);
+      animationQueue.addAnimation(collisionAnimation);
       game.healthMeter.gain(healthPerEnemyDestroyed);
     }
   }
@@ -835,6 +842,7 @@ class Game {
 }
 
 //class to read an image and break it down into frames
+//need to implement support for multiple rows, prob can just change frameY to have an actual value
 class SpriteSheet{
   constructor(image, imageWidth, frameWidth, frameHeight){
     //breaking down is happening here mostly
@@ -842,41 +850,63 @@ class SpriteSheet{
     this.frameWidth = frameWidth;
     this.frameHeight = frameHeight;
     this.imageWidth = imageWidth;
+    //count the number of sprites per spritesheet
     this.frames = Math.floor(imageWidth / frameWidth);
   }
   // draw a specific frame
   drawFrame(frame, x, y){
-    console.log('drawing frame ' + frame);
     const frameX = frame * this.frameWidth;
     const frameY = 0;
+    //draws the current frame at the given x and y by taking the width * current sprite # and always starts at 0 (unless there are multiple rows of sprites)
     image(this.image, x, y, this.frameWidth, this.frameHeight, frameX, frameY, this.frameWidth, this.frameHeight);
   }
 
 }
 // takes a spritesheet and plays it frame by frame
 class Animation{
-  constructor(spriteSheet, frameSpeed){
+  constructor(spriteSheet, perSpriteFrames, x, y){
+    this.isDone = false;
     this.spriteSheet = spriteSheet;
-    this.frameSpeed = frameSpeed;
-    this.currentFrame = 0;
+    this.perSpriteFrames = perSpriteFrames;
+    this.currentSpriteFrame = 0;
     this.frameCounter = frameCount;
+    this.x = x;
+    this.y = y;
   }
   //draws the current frame at the given x and y
-  draw(x, y){
-    let deltaFrames = frameCount - this.frameCounter;
-    console.log('current frame ' + this.currentFrame);
-    console.log('delta frames ' + deltaFrames);
-    if(deltaFrames >= this.frameSpeed){
-      this.spriteSheet.drawFrame(this.currentFrame, x, y);
-      this.currentFrame++;
-      this.frameCounter = frameCount;
+  play(){
+    this.spriteSheet.drawFrame(this.currentSpriteFrame, this.x, this.y); 
+    const deltaFrames = frameCount - this.frameCounter; 
+    if(deltaFrames >= this.perSpriteFrames){ // if enough frames have passed as per perSpriteFrames
+      this.currentSpriteFrame++; // move to the next frame
+      this.frameCounter = frameCount; 
     }
-    if(this.currentFrame >= this.spriteSheet.frames){
-      this.currentFrame = 0;
+    if(this.currentSpriteFrame >= this.spriteSheet.frames){ // if we are at the end of the animation
+      this.currentSpriteFrame = 0; // go back to the start
+      this.isDone = true; // set the animation to done
     }
-
   }
 }
+
+class AnimationPlayer{
+  constructor(){
+    this.animations = [];
+  }
+  addAnimation(animation){
+    this.animations.push(animation);
+  }
+  playAnimations(){
+    for(const animation of this.animations){
+      if(animation.isDone){
+        this.animations.splice(this.animations.indexOf(animation), 1);
+      }
+      else{
+        animation.play();
+      }
+    }
+  }
+}
+
 
 function preload() {
   soundFormats("mp3");
@@ -906,19 +936,18 @@ function setup() {
   soundImage = loadImage("assets/sound.png");
 
   collisionSheet = new SpriteSheet(collisionImage,512, 64, 64);
-  testSheet = new SpriteSheet(collisionImage, 512, 64, 64);
-  testAnimation = new Animation(testSheet, 5);
+  animationQueue = new AnimationPlayer();
 
   textFont(mainFont);
-
+  
   game = new Game();
 }
 
 function draw() {
   stroke(0);
   background(...backgroundColor);
-  //animation kinda works here, blinks between frames
-  testAnimation.draw(100, 100);
+  //animation works here
+  animationQueue.playAnimations();
   game.draw();
 }
 
