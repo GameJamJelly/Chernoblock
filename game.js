@@ -435,7 +435,7 @@ class Ball {
         this.bounce(collisionLine);
         
         // Collision animation for wall destruction
-        const collisionAnimation = new Animation(collisionSheet, 5x, this.position.x-32, this.position.y-32);
+        const collisionAnimation = new Animation(collisionSheet, 5, this.position.x-32, this.position.y-32);
         animationQueue.addAnimation(collisionAnimation);
 
         game.drawingWall.clearDrawing();
