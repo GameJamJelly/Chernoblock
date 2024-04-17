@@ -30,6 +30,11 @@ let mainFont;
 let menuSound;
 let winSound;
 let soundImage;
+let collisionSheet;
+let testSheet;
+let testAnimation;
+let animationQueue;
+
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -428,8 +433,11 @@ class Ball {
 
       if (collisionLine !== null) {
         this.bounce(collisionLine);
-        // TODO: wall destruction animation
-        //image(collisionImage, this.position.x-32, this.position.y-32, 64, 64);
+        
+        // Collision animation for wall destruction
+        const collisionAnimation = new Animation(collisionSheet, 5x, this.position.x-32, this.position.y-32);
+        animationQueue.addAnimation(collisionAnimation);
+
         game.drawingWall.clearDrawing();
       }
     }
@@ -446,9 +454,10 @@ class Ball {
     }
 
     for (const enemyIndex of enemyCollisions) {
-      // TODO: enemy destruction animation
       game.enemies.splice(enemyIndex, 1);
-      //image(collisionImage, this.position.x-32, this.position.y-32, 64, 64); // Display the collision image
+      // Collision animation for enemy destruction
+      const collisionAnimation = new Animation(collisionSheet, 10, this.position.x-32, this.position.y-32);
+      animationQueue.addAnimation(collisionAnimation);
       game.healthMeter.gain(healthPerEnemyDestroyed);
     }
   }
@@ -828,6 +837,73 @@ class Game {
   }
 }
 
+//class to read an image and break it down into frames
+//need to implement support for multiple rows, prob can just change frameY to have an actual value
+class SpriteSheet{
+  constructor(image, imageWidth, frameWidth, frameHeight){
+    //breaking down is happening here mostly
+    this.image = image;
+    this.frameWidth = frameWidth;
+    this.frameHeight = frameHeight;
+    this.imageWidth = imageWidth;
+    //count the number of sprites per spritesheet
+    this.frames = Math.floor(imageWidth / frameWidth);
+  }
+  // draw a specific frame
+  drawFrame(frame, x, y){
+    const frameX = frame * this.frameWidth;
+    const frameY = 0;
+    //draws the current frame at the given x and y by taking the width * current sprite # and always starts at 0 (unless there are multiple rows of sprites)
+    image(this.image, x, y, this.frameWidth, this.frameHeight, frameX, frameY, this.frameWidth, this.frameHeight);
+  }
+
+}
+// takes a spritesheet and plays it frame by frame
+class Animation{
+  constructor(spriteSheet, perSpriteFrames, x, y){
+    this.isDone = false;
+    this.spriteSheet = spriteSheet;
+    this.perSpriteFrames = perSpriteFrames;
+    this.currentSpriteFrame = 0;
+    this.frameCounter = frameCount;
+    this.x = x;
+    this.y = y;
+  }
+  //draws the current frame at the given x and y
+  play(){
+    this.spriteSheet.drawFrame(this.currentSpriteFrame, this.x, this.y); 
+    const deltaFrames = frameCount - this.frameCounter; 
+    if(deltaFrames >= this.perSpriteFrames){ // if enough frames have passed as per perSpriteFrames
+      this.currentSpriteFrame++; // move to the next frame
+      this.frameCounter = frameCount; 
+    }
+    if(this.currentSpriteFrame >= this.spriteSheet.frames){ // if we are at the end of the animation
+      this.currentSpriteFrame = 0; // go back to the start
+      this.isDone = true; // set the animation to done
+    }
+  }
+}
+
+class AnimationPlayer{
+  constructor(){
+    this.animations = [];
+  }
+  addAnimation(animation){
+    this.animations.push(animation);
+  }
+  playAnimations(){
+    for(const animation of this.animations){
+      if(animation.isDone){
+        this.animations.splice(this.animations.indexOf(animation), 1);
+      }
+      else{
+        animation.play();
+      }
+    }
+  }
+}
+
+
 function preload() {
   soundFormats("mp3");
   menuSound = loadSound("assets/chernoblock.mp3", () => {
@@ -851,19 +927,23 @@ function setup() {
   loseImage = loadImage("assets/loser.png");
   menuBgImage = loadImage("assets/main_menu_bg.png");
   ingameBgImage = loadImage("assets/ingame_bg.gif");
-  collisionImage = loadImage("assets/graphite_particles_blue.gif"); // Load the GIF as an animation
+  collisionImage = loadImage("assets/graphite_particles_blue.png"); // Load the image as an animation
   mainFont = loadFont("assets/Comdotbold-JRW7.ttf");
   soundImage = loadImage("assets/sound.png");
 
-  textFont(mainFont);
+  collisionSheet = new SpriteSheet(collisionImage,512, 64, 64);
+  animationQueue = new AnimationPlayer();
 
+  textFont(mainFont);
+  
   game = new Game();
 }
 
 function draw() {
   stroke(0);
   background(...backgroundColor);
-
+  //play all queued animations
+  animationQueue.playAnimations();
   game.draw();
 }
 
