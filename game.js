@@ -434,8 +434,8 @@ class Ball {
       if (collisionLine !== null) {
         this.bounce(collisionLine);
         
-        //Adds animation to the queue
-        const collisionAnimation = new Animation(collisionSheet, 10, this.position.x-32, this.position.y-32);
+        // Collision animation for wall destruction
+        const collisionAnimation = new Animation(collisionSheet, 5x, this.position.x-32, this.position.y-32);
         animationQueue.addAnimation(collisionAnimation);
 
         game.drawingWall.clearDrawing();
@@ -455,11 +455,7 @@ class Ball {
 
     for (const enemyIndex of enemyCollisions) {
       game.enemies.splice(enemyIndex, 1);
-      // TODO: enemy destruction animation
-      // This probably doesnt work because the for iteration only gets executed once
-      // The animation instead requires a continuous draw loop
-      // Maybe we can offload the animations to a queue and play them at the end of the collision logic
-      // Perhaps an animation player that has a queue of animations to play
+      // Collision animation for enemy destruction
       const collisionAnimation = new Animation(collisionSheet, 10, this.position.x-32, this.position.y-32);
       animationQueue.addAnimation(collisionAnimation);
       game.healthMeter.gain(healthPerEnemyDestroyed);
@@ -946,7 +942,7 @@ function setup() {
 function draw() {
   stroke(0);
   background(...backgroundColor);
-  //animation works here
+  //play all queued animations
   animationQueue.playAnimations();
   game.draw();
 }
