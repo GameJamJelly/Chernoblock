@@ -35,7 +35,6 @@ let testSheet;
 let testAnimation;
 let animationQueue;
 
-
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
 }
@@ -112,10 +111,12 @@ function drawPotentialWall(x1, y1, x2, y2) {
 
   translate(x, y);
   rotate(textRotation);
+  translate(0, wallDepth / 2 + 4);
   stroke(0);
+  strokeWeight(0);
   fill(255);
-  textAlign(CENTER, CENTER);
-  textSize(wallDepth * 0.75);
+  textAlign(CENTER, TOP);
+  textSize(20);
   text(wallCost.toString(), 0, 0);
 
   pop();
@@ -173,6 +174,13 @@ class Rectangle {
     this.l2 = l2;
     this.l3 = l3;
     this.l4 = l4;
+  }
+
+  centerPoint() {
+    return new Point(
+      (this.l1.p1.x + this.l3.p1.x) / 2,
+      (this.l1.p1.y + this.l3.p1.y) / 2
+    );
   }
 
   collisionWith(point) {
@@ -433,32 +441,39 @@ class Ball {
 
       if (collisionLine !== null) {
         this.bounce(collisionLine);
-        
+
         // Collision animation for wall destruction
-        const collisionAnimation = new Animation(collisionSheet, 5, this.position.x-32, this.position.y-32);
+        const wallCenter = game.drawingWall.rect.centerPoint();
+        const collisionAnimation = new GameAnimation(
+          collisionSheet,
+          5,
+          wallCenter.x,
+          wallCenter.y
+        );
         animationQueue.addAnimation(collisionAnimation);
 
         game.drawingWall.clearDrawing();
       }
     }
 
-    const enemyCollisions = [];
-
     for (let i = 0; i < game.enemies.length; i++) {
       const collisionLine = game.enemies[i].rect.collisionWith(this.position);
 
       if (collisionLine !== null) {
         this.bounce(collisionLine);
-        enemyCollisions.push(i);
-      }
-    }
+        const enemyCenter = game.enemies[i].rect.centerPoint();
+        game.enemies.splice(i--, 1);
 
-    for (const enemyIndex of enemyCollisions) {
-      game.enemies.splice(enemyIndex, 1);
-      // Collision animation for enemy destruction
-      const collisionAnimation = new Animation(collisionSheet, 10, this.position.x-32, this.position.y-32);
-      animationQueue.addAnimation(collisionAnimation);
-      game.healthMeter.gain(healthPerEnemyDestroyed);
+        // Collision animation for enemy destruction
+        const collisionAnimation = new GameAnimation(
+          collisionSheet,
+          10,
+          enemyCenter.x,
+          enemyCenter.y
+        );
+        animationQueue.addAnimation(collisionAnimation);
+        game.healthMeter.gain(healthPerEnemyDestroyed);
+      }
     }
   }
 
@@ -594,7 +609,7 @@ class HealthMeter {
     } else {
       fill(255, 0, 0);
     }
-    text(`${this.health} rub`, width - 10, 18);
+    text(`${this.health} RUB`, width - 10, 18);
 
     pop();
   }
@@ -667,8 +682,6 @@ class Game {
     });
 
     this.reset();
-
-    // TODO: trigger audio loop
   }
 
   reset() {
@@ -699,7 +712,7 @@ class Game {
     this.played = true;
     this.playing = false;
     this.won = true;
-    this.scoreText.text = `Money saved: ${this.healthMeter.health} rub`;
+    this.scoreText.text = `Money saved: ${this.healthMeter.health} RUB`;
   }
 
   lose() {
@@ -839,28 +852,48 @@ class Game {
 
 //class to read an image and break it down into frames
 //need to implement support for multiple rows, prob can just change frameY to have an actual value
-class SpriteSheet{
-  constructor(image, imageWidth, frameWidth, frameHeight){
+class SpriteSheet {
+  constructor(image, imageWidth, frameWidth, frameHeight, center) {
     //breaking down is happening here mostly
     this.image = image;
     this.frameWidth = frameWidth;
     this.frameHeight = frameHeight;
     this.imageWidth = imageWidth;
+    this.center = center;
     //count the number of sprites per spritesheet
     this.frames = Math.floor(imageWidth / frameWidth);
   }
   // draw a specific frame
-  drawFrame(frame, x, y){
+  drawFrame(frame, x, y) {
     const frameX = frame * this.frameWidth;
     const frameY = 0;
     //draws the current frame at the given x and y by taking the width * current sprite # and always starts at 0 (unless there are multiple rows of sprites)
-    image(this.image, x, y, this.frameWidth, this.frameHeight, frameX, frameY, this.frameWidth, this.frameHeight);
-  }
 
+    push();
+
+    if (this.center) {
+      imageMode(CENTER);
+    }
+
+    image(
+      this.image,
+      x,
+      y,
+      this.frameWidth,
+      this.frameHeight,
+      frameX,
+      frameY,
+      this.frameWidth,
+      this.frameHeight
+    );
+
+    pop();
+  }
 }
+
 // takes a spritesheet and plays it frame by frame
-class Animation{
-  constructor(spriteSheet, perSpriteFrames, x, y){
+class GameAnimation {
+  constructor(spriteSheet, perSpriteFrames, x, y) {
     this.isDone = false;
     this.spriteSheet = spriteSheet;
     this.perSpriteFrames = perSpriteFrames;
@@ -870,39 +903,39 @@ class Animation{
     this.y = y;
   }
   //draws the current frame at the given x and y
-  play(){
-    this.spriteSheet.drawFrame(this.currentSpriteFrame, this.x, this.y); 
-    const deltaFrames = frameCount - this.frameCounter; 
-    if(deltaFrames >= this.perSpriteFrames){ // if enough frames have passed as per perSpriteFrames
+  play() {
+    this.spriteSheet.drawFrame(this.currentSpriteFrame, this.x, this.y);
+    const deltaFrames = frameCount - this.frameCounter;
+    if (deltaFrames >= this.perSpriteFrames) {
+      // if enough frames have passed as per perSpriteFrames
       this.currentSpriteFrame++; // move to the next frame
-      this.frameCounter = frameCount; 
+      this.frameCounter = frameCount;
     }
-    if(this.currentSpriteFrame >= this.spriteSheet.frames){ // if we are at the end of the animation
+    if (this.currentSpriteFrame >= this.spriteSheet.frames) {
+      // if we are at the end of the animation
       this.currentSpriteFrame = 0; // go back to the start
       this.isDone = true; // set the animation to done
     }
   }
 }
 
-class AnimationPlayer{
-  constructor(){
+class AnimationPlayer {
+  constructor() {
     this.animations = [];
   }
-  addAnimation(animation){
+  addAnimation(animation) {
     this.animations.push(animation);
   }
-  playAnimations(){
-    for(const animation of this.animations){
-      if(animation.isDone){
+  playAnimations() {
+    for (const animation of this.animations) {
+      if (animation.isDone) {
         this.animations.splice(this.animations.indexOf(animation), 1);
-      }
-      else{
+      } else {
         animation.play();
       }
     }
   }
 }
-
 
 function preload() {
   soundFormats("mp3");
@@ -931,11 +964,11 @@ function setup() {
   mainFont = loadFont("assets/Comdotbold-JRW7.ttf");
   soundImage = loadImage("assets/sound.png");
 
-  collisionSheet = new SpriteSheet(collisionImage,512, 64, 64);
+  collisionSheet = new SpriteSheet(collisionImage, 512, 64, 64, true);
   animationQueue = new AnimationPlayer();
 
   textFont(mainFont);
-  
+
   game = new Game();
 }
 
