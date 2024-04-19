@@ -1,3 +1,4 @@
+const fps = 60;
 const wallImageWidth = 64;
 const wallImageHeight = 16;
 const wallDepth = 16;
@@ -6,8 +7,13 @@ const ballSpeed = 4;
 const ballRadius = 8;
 const startingHealth = 100;
 const healthPerEnemyDestroyed = 50;
+const comboMultiplier = 1.1;
 const enemyRows = 5;
 const enemyColumns = 10;
+const textAnimationMoveSpeed = 1;
+const defaultTextAnimationColor = [255, 255, 255];
+const defaultTextAnimationSize = 16;
+const defaultTextAnimationDuration = 3.0;
 const backgroundColor = [178, 200, 138];
 const edgeColor = [0, 0, 0];
 const defaultTextSize = 16;
@@ -33,7 +39,6 @@ let soundImage;
 let collisionSheet;
 let testSheet;
 let testAnimation;
-let animationQueue;
 
 function normalizeAngle(angle) {
   return angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
@@ -450,9 +455,10 @@ class Ball {
           wallCenter.x,
           wallCenter.y
         );
-        animationQueue.addAnimation(collisionAnimation);
+        game.animationQueue.addAnimation(collisionAnimation);
 
         game.drawingWall.clearDrawing();
+        game.combo = 0;
       }
     }
 
@@ -465,14 +471,27 @@ class Ball {
         game.enemies.splice(i--, 1);
 
         // Collision animation for enemy destruction
-        const collisionAnimation = new GameAnimation(
-          collisionSheet,
-          10,
-          enemyCenter.x,
-          enemyCenter.y
+        game.animationQueue.addAnimation(
+          new GameAnimation(collisionSheet, 10, enemyCenter.x, enemyCenter.y)
         );
-        animationQueue.addAnimation(collisionAnimation);
-        game.healthMeter.gain(healthPerEnemyDestroyed);
+
+        if (game.combo > 0) {
+          game.animationQueue.addAnimation(
+            new TextAnimation({
+              text: `+${game.combo}`,
+              textSize: 20,
+              duration: 2.0,
+              position: enemyCenter,
+            })
+          );
+        }
+
+        game.healthMeter.gain(
+          Math.round(
+            healthPerEnemyDestroyed * Math.pow(comboMultiplier, game.combo)
+          )
+        );
+        game.combo += 1;
       }
     }
   }
@@ -681,6 +700,8 @@ class Game {
       menuSound.loop();
     });
 
+    this.animationQueue = new AnimationPlayer();
+
     this.reset();
   }
 
@@ -690,6 +711,7 @@ class Game {
     this.drawingWall = new DrawingWall();
     this.ball = new Ball(new Point(width / 2, height - 100));
     this.healthMeter = new HealthMeter();
+    this.combo = 0;
     this.enemies = [];
 
     for (let i = 0; i < enemyRows * enemyColumns; i++) {
@@ -709,6 +731,7 @@ class Game {
   win() {
     menuSound.stop();
     winSound.loop();
+    this.animationQueue.clear();
     this.played = true;
     this.playing = false;
     this.won = true;
@@ -717,6 +740,7 @@ class Game {
 
   lose() {
     menuSound.stop();
+    this.animationQueue.clear();
     this.played = true;
     this.playing = false;
     this.won = false;
@@ -847,6 +871,8 @@ class Game {
         this.win();
       }
     }
+
+    this.animationQueue.playAnimations();
   }
 }
 
@@ -894,7 +920,7 @@ class SpriteSheet {
 // takes a spritesheet and plays it frame by frame
 class GameAnimation {
   constructor(spriteSheet, perSpriteFrames, x, y) {
-    this.isDone = false;
+    this.done = false;
     this.spriteSheet = spriteSheet;
     this.perSpriteFrames = perSpriteFrames;
     this.currentSpriteFrame = 0;
@@ -902,6 +928,7 @@ class GameAnimation {
     this.x = x;
     this.y = y;
   }
+
   //draws the current frame at the given x and y
   play() {
     this.spriteSheet.drawFrame(this.currentSpriteFrame, this.x, this.y);
@@ -914,8 +941,48 @@ class GameAnimation {
     if (this.currentSpriteFrame >= this.spriteSheet.frames) {
       // if we are at the end of the animation
       this.currentSpriteFrame = 0; // go back to the start
-      this.isDone = true; // set the animation to done
+      this.done = true; // set the animation to done
     }
+  }
+}
+
+class TextAnimation {
+  constructor(options) {
+    this.text = options.text;
+    this.position = options.position;
+    this.textColor = options.textColor ?? defaultTextAnimationColor;
+    this.textSize = options.textSize ?? defaultTextAnimationSize;
+    this.duration = this.duration ?? defaultTextAnimationDuration;
+    this.done = false;
+    this.startFrame = frameCount;
+  }
+
+  play() {
+    if ((frameCount - this.startFrame) / fps >= this.duration) {
+      this.done = true;
+      return;
+    }
+
+    const timeRemaining = this.duration - (frameCount - this.startFrame) / fps;
+    let opacity = 1.0;
+
+    if (timeRemaining < 1.0) {
+      opacity = timeRemaining;
+    }
+
+    push();
+
+    strokeWeight(0);
+    fill(...this.textColor, opacity * 255);
+    textSize(this.textSize);
+    textAlign(CENTER, CENTER);
+    text(
+      this.text,
+      this.position.x,
+      this.position.y - (frameCount - this.startFrame) * textAnimationMoveSpeed
+    );
+
+    pop();
   }
 }
 
@@ -923,17 +990,23 @@ class AnimationPlayer {
   constructor() {
     this.animations = [];
   }
+
   addAnimation(animation) {
     this.animations.push(animation);
   }
+
   playAnimations() {
-    for (const animation of this.animations) {
-      if (animation.isDone) {
-        this.animations.splice(this.animations.indexOf(animation), 1);
+    for (let i = 0; i < this.animations.length; i++) {
+      if (this.animations[i].done) {
+        this.animations.splice(i--, 1);
       } else {
-        animation.play();
+        this.animations[i].play();
       }
     }
+  }
+
+  clear() {
+    this.animations = [];
   }
 }
 
@@ -950,7 +1023,7 @@ function preload() {
 function setup() {
   createCanvas(800, 600);
   stroke(255);
-  frameRate(60);
+  frameRate(fps);
 
   comradeImage = loadImage("assets/dyatlov_stare.png");
   ballImage = loadImage("assets/neutron.png");
@@ -965,18 +1038,21 @@ function setup() {
   soundImage = loadImage("assets/sound.png");
 
   collisionSheet = new SpriteSheet(collisionImage, 512, 64, 64, true);
-  animationQueue = new AnimationPlayer();
 
   textFont(mainFont);
 
   game = new Game();
+
+  // let intervalFrame = 0;
+  // setInterval(() => {
+  //   console.log(frameCount - intervalFrame);
+  //   intervalFrame = frameCount;
+  // }, 1000);
 }
 
 function draw() {
   stroke(0);
   background(...backgroundColor);
-  //play all queued animations
-  animationQueue.playAnimations();
   game.draw();
 }
 
